@@ -1,31 +1,30 @@
 import streamlit as st
 import openai
-import os
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# Initialize OpenAI client using secrets
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.set_page_config(page_title="Chat with GPT", layout="wide")
+st.set_page_config(page_title="ChatGPT with Streamlit", layout="centered")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+st.title("💬 Chat with GPT")
+st.markdown("Ask me anything!")
 
-st.title("🤖 Chat with GPT")
+# User input
+user_input = st.text_input("Your question:")
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-user_input = st.chat_input("Ask me anything...")
+# Chat completion
 if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    with st.spinner("Thinking..."):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            message = response.choices[0].message.content
+            st.success(message)
 
-    with st.chat_message("assistant"):
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=st.session_state.messages
-        )
-        reply = response.choices[0].message.content
-        st.markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+        except Exception as e:
+            st.error(f"Error: {e}")
